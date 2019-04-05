@@ -11,16 +11,15 @@ Usage:
 
 Flags:
       --address string                address to listen on for web interface and telemetry (default ":9564")
-      --centrifugo-api-key string     centrifugo api key (or use env CENTRIFUGO_API_KEY)
-      --centrifugo-endpoint string    centrifugo server endpoint (default "http://localhost")
-      --centrifugo-node-name string   target centrifugo node name
+      --centrifugo-secret string      centrifugo secret (or use env CENTRIFUGO_SECRET)
+      --centrifugo-endpoint string    centrifugo server endpoint (default "http://localhost:8000")
+      --centrifugo-node-name string   target centrifugo node name (or use env CENTRIFUGO_NODE_NAME)
   -h, --help                          help for centrifugo-prometheus-exporter
       --metrics-path string           path under which to expose metrics (default "/metrics")
-      
 ```
 ## Run in container
 ```bash
-$ docker run -p 9564:9564 kismia/centrifugo-prometheus-exporter
+$ docker run -p 9564:9564 kismia/centrifugo-prometheus-exporter -h
 ```
 
 ## Collectors

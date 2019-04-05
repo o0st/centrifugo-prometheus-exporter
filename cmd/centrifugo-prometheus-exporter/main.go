@@ -18,7 +18,7 @@ import (
 
 type options struct {
 	centrifugoEndpoint string
-	centrifugoApiKey   string
+	centrifugoSecret   string
 	centrifugoNodeName string
 	address            string
 	metricsPath        string
@@ -29,17 +29,21 @@ func main() {
 	command := &cobra.Command{
 		Use: "centrifugo-prometheus-exporter",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if options.centrifugoApiKey == "" {
-				options.centrifugoApiKey = os.Getenv("CENTRIFUGO_API_KEY")
+			if options.centrifugoSecret == "" {
+				options.centrifugoSecret = os.Getenv("CENTRIFUGO_SECRET")
+			}
+
+			if options.centrifugoNodeName == "" {
+				options.centrifugoNodeName = os.Getenv("CENTRIFUGO_NODE_NAME")
 			}
 
 			return options.Run()
 		},
 	}
 
-	command.Flags().StringVar(&options.centrifugoEndpoint, "centrifugo-endpoint", "http://localhost", "centrifugo server endpoint")
-	command.Flags().StringVar(&options.centrifugoApiKey, "centrifugo-api-key", "", "centrifugo api key (or use env CENTRIFUGO_API_KEY)")
-	command.Flags().StringVar(&options.centrifugoNodeName, "centrifugo-node-name", "", "target centrifugo node name")
+	command.Flags().StringVar(&options.centrifugoEndpoint, "centrifugo-endpoint", "http://localhost:8000", "centrifugo server endpoint")
+	command.Flags().StringVar(&options.centrifugoSecret, "centrifugo-secret", "", "centrifugo api key (or use env CENTRIFUGO_SECRET)")
+	command.Flags().StringVar(&options.centrifugoNodeName, "centrifugo-node-name", "", "target centrifugo node name (or use env CENTRIFUGO_NODE_NAME)")
 	command.Flags().StringVar(&options.address, "address", ":9564", "address to listen on for web interface and telemetry")
 	command.Flags().StringVar(&options.metricsPath, "metrics-path", "/metrics", "path under which to expose metrics")
 
@@ -51,7 +55,7 @@ func main() {
 func (o *options) Run() error {
 	registry := prometheus.NewRegistry()
 
-	client := centrifugo.NewClient(o.centrifugoEndpoint, o.centrifugoApiKey)
+	client := centrifugo.NewClient(o.centrifugoEndpoint, o.centrifugoSecret)
 
 	exporter := collector.NewExporter(client, o.centrifugoNodeName)
 
