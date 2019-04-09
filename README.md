@@ -64,7 +64,6 @@ centrifugo_node_clients_unique 2506
 centrifugo_node_history_items 996
 # HELP centrifugo_node_messages Number of node messages by type and state.
 # TYPE centrifugo_node_messages gauge
-centrifugo_node_messages{state="",type=""} 20838
 centrifugo_node_messages{state="published",type="admin"} 0
 centrifugo_node_messages{state="published",type="client"} 19821
 centrifugo_node_messages{state="published",type="control"} 405

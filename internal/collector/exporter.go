@@ -195,7 +195,6 @@ func (e *Exporter) collectFromNode(ch chan<- prometheus.Metric, node centrifugo.
 	ch <- prometheus.MustNewConstMetric(e.httpAPIRequests, prometheus.GaugeValue, node.Metrics.HTTPAPINumRequests)
 	ch <- prometheus.MustNewConstMetric(e.httpRequests, prometheus.GaugeValue, node.Metrics.HTTPRawWsNumRequests, "ws")
 	ch <- prometheus.MustNewConstMetric(e.httpRequests, prometheus.GaugeValue, node.Metrics.HTTPSockjsNumRequests, "sockjs")
-	ch <- prometheus.MustNewConstMetric(e.nodeMessages, prometheus.GaugeValue, node.Metrics.ClientNumMsgQueued, "", "")
 	ch <- prometheus.MustNewConstMetric(e.nodeMessages, prometheus.GaugeValue, node.Metrics.NodeNumClientMsgPublished, "client", "published")
 	ch <- prometheus.MustNewConstMetric(e.nodeMessages, prometheus.GaugeValue, node.Metrics.NodeNumClientMsgReceived, "client", "received")
 	ch <- prometheus.MustNewConstMetric(e.nodeMessages, prometheus.GaugeValue, node.Metrics.NodeNumControlMsgPublished, "control", "published")
