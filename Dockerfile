@@ -12,7 +12,7 @@ FROM alpine:3.9
 
 COPY --from=builder /centrifugo-prometheus-exporter /usr/bin/centrifugo-prometheus-exporter
 
-EXPOSE 9100
+EXPOSE 9564
 
 STOPSIGNAL SIGTERM
 

@@ -12,30 +12,24 @@ import (
 const (
 	namespace              = "centrifugo"
 	clientAPISubsystem     = "client_api"
-	httpServerSubsystem    = "http_server"
 	httpServerAPISubsystem = "http_server_api"
 	nodeSubsystem          = "node"
 )
 
 type Exporter struct {
-	nodeName               string
-	client                 *centrifugo.Client
-	up                     *prometheus.Desc
-	clientAPIRequests      *prometheus.Desc
-	clientAPIBytes         *prometheus.Desc
-	clientAPIConnections   *prometheus.Desc
-	clientAPIMessages      *prometheus.Desc
-	clientAPISubscriptions *prometheus.Desc
-	httpAPIRequests        *prometheus.Desc
-	httpRequests           *prometheus.Desc
-	nodeMessages           *prometheus.Desc
-	nodeOperations         *prometheus.Desc
-	nodeChannels           *prometheus.Desc
-	nodeClients            *prometheus.Desc
-	nodeUniqueClients      *prometheus.Desc
-	nodeHistoryItems       *prometheus.Desc
-	nodePresenceItems      *prometheus.Desc
-	nodeUptime             *prometheus.Desc
+	nodeName          string
+	client            *centrifugo.Client
+	up                *prometheus.Desc
+	clientAPIRequests *prometheus.Desc
+	clientAPIBytes    *prometheus.Desc
+	clientAPIMessages *prometheus.Desc
+	httpAPIRequests   *prometheus.Desc
+	nodeChannels      *prometheus.Desc
+	nodeClients       *prometheus.Desc
+	nodeUniqueClients *prometheus.Desc
+	nodeMemUsage      *prometheus.Desc
+	nodeCPUUsage      *prometheus.Desc
+	nodeUptime        *prometheus.Desc
 }
 
 func NewExporter(client *centrifugo.Client, nodeName string) *Exporter {
@@ -60,46 +54,16 @@ func NewExporter(client *centrifugo.Client, nodeName string) *Exporter {
 			[]string{"direction"},
 			nil,
 		),
-		clientAPIConnections: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, clientAPISubsystem, "connections"),
-			"Number of connection to client api.",
-			nil,
-			nil,
-		),
 		clientAPIMessages: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, clientAPISubsystem, "messages"),
 			"Number client messages by state.",
 			[]string{"state"},
 			nil,
 		),
-		clientAPISubscriptions: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, clientAPISubsystem, "subscriptions"),
-			"Number of client api subscriptions.",
-			nil,
-			nil,
-		),
 		httpAPIRequests: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, httpServerAPISubsystem, "requests"),
 			"Number of server http api requests.",
 			nil,
-			nil,
-		),
-		httpRequests: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, httpServerSubsystem, "requests"),
-			"Number of server http requests by type.",
-			[]string{"type"},
-			nil,
-		),
-		nodeMessages: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, nodeSubsystem, "messages"),
-			"Number of node messages by type and state.",
-			[]string{"type", "state"},
-			nil,
-		),
-		nodeOperations: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, nodeSubsystem, "operations"),
-			"Number of node operations by type and entity.",
-			[]string{"type", "entity"},
 			nil,
 		),
 		nodeChannels: prometheus.NewDesc(
@@ -120,15 +84,15 @@ func NewExporter(client *centrifugo.Client, nodeName string) *Exporter {
 			nil,
 			nil,
 		),
-		nodeHistoryItems: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, nodeSubsystem, "history_items"),
-			"Number of node history items.",
+		nodeMemUsage: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, nodeSubsystem, "mem_usage"),
+			"Node memory usage in in bytes.",
 			nil,
 			nil,
 		),
-		nodePresenceItems: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, nodeSubsystem, "presence_items"),
-			"Number of node presence items.",
+		nodeCPUUsage: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, nodeSubsystem, "cpu_usage"),
+			"Node CPU usage in in percents.",
 			nil,
 			nil,
 		),
@@ -145,18 +109,13 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- e.up
 	ch <- e.clientAPIRequests
 	ch <- e.clientAPIBytes
-	ch <- e.clientAPIConnections
 	ch <- e.clientAPIMessages
-	ch <- e.clientAPISubscriptions
 	ch <- e.httpAPIRequests
-	ch <- e.httpRequests
-	ch <- e.nodeMessages
-	ch <- e.nodeOperations
+	ch <- e.nodeChannels
 	ch <- e.nodeClients
 	ch <- e.nodeUniqueClients
-	ch <- e.nodeChannels
-	ch <- e.nodeHistoryItems
-	ch <- e.nodePresenceItems
+	ch <- e.nodeMemUsage
+	ch <- e.nodeCPUUsage
 	ch <- e.nodeUptime
 }
 
@@ -184,37 +143,17 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 func (e *Exporter) collectFromNode(ch chan<- prometheus.Metric, node centrifugo.Node) {
 	ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 1)
-	ch <- prometheus.MustNewConstMetric(e.clientAPIRequests, prometheus.GaugeValue, node.Metrics.ClientAPINumRequests)
-	ch <- prometheus.MustNewConstMetric(e.clientAPIBytes, prometheus.GaugeValue, node.Metrics.ClientBytesIn, "in")
-	ch <- prometheus.MustNewConstMetric(e.clientAPIBytes, prometheus.GaugeValue, node.Metrics.ClientBytesOut, "out")
-	ch <- prometheus.MustNewConstMetric(e.clientAPIConnections, prometheus.GaugeValue, node.Metrics.ClientNumConnect)
-	ch <- prometheus.MustNewConstMetric(e.clientAPIMessages, prometheus.GaugeValue, node.Metrics.ClientNumMsgPublished, "published")
-	ch <- prometheus.MustNewConstMetric(e.clientAPIMessages, prometheus.GaugeValue, node.Metrics.ClientNumMsgSent, "sent")
-	ch <- prometheus.MustNewConstMetric(e.clientAPIMessages, prometheus.GaugeValue, node.Metrics.ClientNumMsgQueued, "queued")
-	ch <- prometheus.MustNewConstMetric(e.clientAPISubscriptions, prometheus.GaugeValue, node.Metrics.ClientNumSubscribe)
-	ch <- prometheus.MustNewConstMetric(e.httpAPIRequests, prometheus.GaugeValue, node.Metrics.HTTPAPINumRequests)
-	ch <- prometheus.MustNewConstMetric(e.httpRequests, prometheus.GaugeValue, node.Metrics.HTTPRawWsNumRequests, "ws")
-	ch <- prometheus.MustNewConstMetric(e.httpRequests, prometheus.GaugeValue, node.Metrics.HTTPSockjsNumRequests, "sockjs")
-	ch <- prometheus.MustNewConstMetric(e.nodeMessages, prometheus.GaugeValue, node.Metrics.NodeNumClientMsgPublished, "client", "published")
-	ch <- prometheus.MustNewConstMetric(e.nodeMessages, prometheus.GaugeValue, node.Metrics.NodeNumClientMsgReceived, "client", "received")
-	ch <- prometheus.MustNewConstMetric(e.nodeMessages, prometheus.GaugeValue, node.Metrics.NodeNumControlMsgPublished, "control", "published")
-	ch <- prometheus.MustNewConstMetric(e.nodeMessages, prometheus.GaugeValue, node.Metrics.NodeNumControlMsgReceived, "control", "received")
-	ch <- prometheus.MustNewConstMetric(e.nodeMessages, prometheus.GaugeValue, node.Metrics.NodeNumJoinMsgPublished, "join", "published")
-	ch <- prometheus.MustNewConstMetric(e.nodeMessages, prometheus.GaugeValue, node.Metrics.NodeNumJoinMsgReceived, "join", "received")
-	ch <- prometheus.MustNewConstMetric(e.nodeMessages, prometheus.GaugeValue, node.Metrics.NodeNumLeaveMsgPublished, "leave", "published")
-	ch <- prometheus.MustNewConstMetric(e.nodeMessages, prometheus.GaugeValue, node.Metrics.NodeNumLeaveMsgReceived, "leave", "received")
-	ch <- prometheus.MustNewConstMetric(e.nodeMessages, prometheus.GaugeValue, node.Metrics.NodeNumAdminMsgPublished, "admin", "published")
-	ch <- prometheus.MustNewConstMetric(e.nodeMessages, prometheus.GaugeValue, node.Metrics.NodeNumAdminMsgReceived, "admin", "received")
-	ch <- prometheus.MustNewConstMetric(e.nodeOperations, prometheus.GaugeValue, node.Metrics.NodeNumAddClientConn, "add", "conn")
-	ch <- prometheus.MustNewConstMetric(e.nodeOperations, prometheus.GaugeValue, node.Metrics.NodeNumRemoveClientConn, "remove", "conn")
-	ch <- prometheus.MustNewConstMetric(e.nodeOperations, prometheus.GaugeValue, node.Metrics.NodeNumAddClientSub, "add", "sub")
-	ch <- prometheus.MustNewConstMetric(e.nodeOperations, prometheus.GaugeValue, node.Metrics.NodeNumRemoveClientSub, "remove", "sub")
-	ch <- prometheus.MustNewConstMetric(e.nodeOperations, prometheus.GaugeValue, node.Metrics.NodeNumAddPresence, "add", "presence")
-	ch <- prometheus.MustNewConstMetric(e.nodeOperations, prometheus.GaugeValue, node.Metrics.NodeNumRemovePresence, "remove", "presence")
-	ch <- prometheus.MustNewConstMetric(e.nodeChannels, prometheus.GaugeValue, node.Metrics.NodeNumChannels)
-	ch <- prometheus.MustNewConstMetric(e.nodeClients, prometheus.GaugeValue, node.Metrics.NodeNumClients)
-	ch <- prometheus.MustNewConstMetric(e.nodeUniqueClients, prometheus.GaugeValue, node.Metrics.NodeNumUniqueClients)
-	ch <- prometheus.MustNewConstMetric(e.nodeHistoryItems, prometheus.GaugeValue, node.Metrics.NodeNumHistory)
-	ch <- prometheus.MustNewConstMetric(e.nodePresenceItems, prometheus.GaugeValue, node.Metrics.NodeNumPresence)
+	ch <- prometheus.MustNewConstMetric(e.clientAPIRequests, prometheus.GaugeValue, node.ClientAPINumRequests)
+	ch <- prometheus.MustNewConstMetric(e.clientAPIBytes, prometheus.GaugeValue, node.ClientBytesIn, "in")
+	ch <- prometheus.MustNewConstMetric(e.clientAPIBytes, prometheus.GaugeValue, node.ClientBytesOut, "out")
+	ch <- prometheus.MustNewConstMetric(e.clientAPIMessages, prometheus.GaugeValue, node.ClientNumMsgPublished, "published")
+	ch <- prometheus.MustNewConstMetric(e.clientAPIMessages, prometheus.GaugeValue, node.ClientNumMsgSent, "sent")
+	ch <- prometheus.MustNewConstMetric(e.clientAPIMessages, prometheus.GaugeValue, node.ClientNumMsgQueued, "queued")
+	ch <- prometheus.MustNewConstMetric(e.httpAPIRequests, prometheus.GaugeValue, node.HTTPAPINumRequests)
+	ch <- prometheus.MustNewConstMetric(e.nodeChannels, prometheus.GaugeValue, node.NodeNumChannels)
+	ch <- prometheus.MustNewConstMetric(e.nodeClients, prometheus.GaugeValue, node.NodeNumClients)
+	ch <- prometheus.MustNewConstMetric(e.nodeUniqueClients, prometheus.GaugeValue, node.NodeNumUniqueClients)
+	ch <- prometheus.MustNewConstMetric(e.nodeMemUsage, prometheus.GaugeValue, node.NodeMemUsage)
+	ch <- prometheus.MustNewConstMetric(e.nodeCPUUsage, prometheus.GaugeValue, node.NodeCPUUsage)
 	ch <- prometheus.MustNewConstMetric(e.nodeUptime, prometheus.GaugeValue, float64(time.Now().Unix()-node.StartedAt))
 }
